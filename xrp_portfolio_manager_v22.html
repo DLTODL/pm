@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"/>
+  <title>XRP Portfolio Manager</title>
+  <style>
+    :root{ --bg:#0e1117; --card:#161b22; --text:#e6edf3; --muted:#8b949e; --radius:16px; }
+    *{box-sizing:border-box}
+    html,body{margin:0;padding:0;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;background:#0e1117;color:var(--text)}
+    .container{max-width:560px;margin:0 auto;padding:12px 12px 24px}
+    .row{display:flex;gap:10px}
+    .row.wrap{flex-wrap:wrap}
+    .card{background:var(--card);border-radius:var(--radius);padding:12px}
+    .pill{display:inline-flex;align-items:center;gap:6px;background:#0b1220;border:1px solid #263041;padding:6px 10px;border-radius:999px;font-size:12px;color:var(--muted)}
+    .title{font-size:18px;font-weight:700;margin:0 0 8px}
+    .subtitle{font-size:12px;color:var(--muted);margin-top:2px}
+    .grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    .tile{flex:1;min-width:46%;padding:12px;border-radius:14px;background:#0f1726;border:1px solid #22314b}
+    .tile .label{font-size:12px;color:var(--muted)}
+    .tile .val{font-size:18px;font-weight:700;margin-top:4px}
+    .btns{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
+    button{border:0;border-radius:12px;padding:8px 10px;background:#0b1220;color:var(--text);border:1px solid #2a3a59;font-weight:600;cursor:pointer}
+    /* micro-sized buttons */
+    .micro{font-size:11px !important; padding:4px 8px !important; border-radius:8px !important; line-height:1 !important}
+    input[type="text"]{width:100%;padding:10px 12px;border-radius:12px;border:1px solid #2a3a59;background:#0b1220;color:var(--text);font-size:16px}
+    .mono{font-variant-numeric:tabular-nums; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono','Courier New', monospace;}
+    .kpis{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
+    .kpi{background:#0f1726;border:1px solid #22314b;border-radius:14px;padding:10px}
+    .kpi .k{font-size:12px;color:var(--muted);margin-bottom:4px}
+    .section{margin-top:12px}
+    .split{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    .slider-wrap{background:#0f1726;border:1px solid #22314b;border-radius:14px;padding:10px}
+    .slider-head{display:flex;justify-content:space-between;align-items:center}
+    .slider-head .tag{font-size:12px;color:var(--muted)}
+    input[type="range"]{-webkit-appearance:none;width:100%;height:28px;background:transparent;margin-top:6px}
+    input[type="range"]::-webkit-slider-runnable-track{height:6px;background:#1f2a44;border-radius:10px}
+    input[type="range"]::-moz-range-track{height:6px;background:#1f2a44;border-radius:10px}
+    input[type="range"]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;height:22px;border-radius:50%;background:#2ea043;border:2px solid #0b1220;margin-top:-8px}
+    input[type="range"]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;background:#2ea043;border:2px solid #0b1220}
+    #priceSliderArea{display:none;margin-top:8px}
+    /* unified toolbar for inline controls (spacing only; size via classes) */
+    .toolbar{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="row wrap" style="align-items:center;justify-content:space-between;margin-bottom:8px">
+      <div class="pill">XRP pricing</div>
+      <div class="pill" id="now">—</div>
+    </div>
+
+    <!-- Live price tiles -->
+    <div class="card">
+      <div class="row" style="justify-content:space-between;align-items:center">
+        <div class="subtitle" id="source">source: —</div>
+      </div>
+      <div class="grid section">
+        <div class="tile">
+          <div class="label">XRPEUR</div>
+          <div class="val mono" id="xrpEur">€0.00</div>
+        </div>
+        <div class="tile">
+          <div class="label">XRPUSD</div>
+          <div class="val mono" id="xrpUsdTile">$0.00</div>
+        </div>
+        <div class="tile">
+          <div class="label">XRPEUR × 21,000</div>
+          <div class="val mono" id="eur20k">€0</div>
+        </div>
+        <div class="tile">
+          <div class="label">XRPEUR × 21,000 (USD est.)</div>
+          <div class="val mono" id="eur20kUsd">$0</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Portfolio Manager -->
+    <div class="card section">
+      <h3 class="title">XRP Portfolio Manager</h3>
+
+      <div class="section">
+        <div class="subtitle">Portfolio value: <span class="mono" id="portfolioValInline">$0</span></div>
+        <div class="subtitle" style="margin-top:6px">Price override (USD) — leave empty to use live</div>
+        <div class="row" style="gap:8px;margin-top:6px">
+          <div style="flex:1.2">
+            <input id="priceOverride" type="text" inputmode="numeric" placeholder="$0">
+          </div>
+          <div class="toolbar">
+            <button id="applyOverride" class="">Apply</button>
+            <button id="togglePriceSlider" class="">Sldr</button>
+            <button id="clearOverride" class="">Use live</button>
+          </div>
+        </div>
+
+        <!-- Quick price presets -->
+        <div class="btns" id="quickPrice">
+          <button data-price="589">$589</button>
+          <button data-price="1000">$1k</button>
+          <button data-price="2500">$2.5k</button>
+          <button data-price="5000">$5k</button>
+          <button data-price="10000">$10k</button>
+          <button data-price="50000">$50k</button>
+        </div>
+
+        <!-- Log scale price slider -->
+        <div id="priceSliderArea" class="slider-wrap">
+          <div class="slider-head">
+            <div>
+              <div class="tag">Price Override Slider (log)</div>
+              <div class="mono" id="priceSliderVal">$0</div>
+            </div>
+          </div>
+          <input id="priceSlider" type="range" min="0" max="1000" step="1" value="500">
+        </div>
+      </div>
+
+      <!-- KPI inputs -->
+      <div class="kpis">
+        <div class="kpi">
+          <div class="k">Portfolio Value</div>
+          <div class="v"><input class="mono" id="inpPortfolioVal" type="text" placeholder="$0"></div>
+        </div>
+        <div class="kpi">
+          <div class="k" style="display:flex;justify-content:space-between;align-items:center;gap:6px">
+            APY (avg)
+            <span>
+              <button class="micro" id="apy5">5%</button>
+              <button class="micro" id="apy10">10%</button>
+              <button class="micro" id="apyReset">r</button>
+            </span>
+          </div>
+          <div class="v mono" id="apy">0%</div>
+        </div>
+      </div>
+
+      <div class="split section">
+        <div class="slider-wrap">
+          <div class="slider-head">
+            <div>
+              <div class="tag">XRP Allocated Interest</div>
+              <div class="mono" id="intXrp">0 XRP</div>
+              <div class="subtitle mono" id="intUsd">USD Value: $0</div>
+            </div>
+          </div>
+          <input id="interestSlider" type="range" min="0" max="21000" step="1000" value="10000">
+          <div class="subtitle mono" id="interestEarned">Interest Earned (est. annual): $0</div>
+        </div>
+
+        <div class="slider-wrap">
+          <div class="slider-head">
+            <div>
+              <div class="tag">XRP Allocated Loan (30% LTV)</div>
+              <div class="mono" id="loanXrp">0 XRP</div>
+              <div class="subtitle mono" id="loanUsd">USD Value: $0</div>
+            </div>
+          </div>
+          <input id="loanSlider" type="range" min="0" max="21000" step="1000" value="10000">
+          <div class="subtitle mono" id="loanAmount">Loan Amount: $0</div>
+        </div>
+      </div>
+
+      <!-- Inline right controls -->
+      <div class="row" style="justify-content:space-between;align-items:center;margin-top:8px">
+        <div class="subtitle"></div>
+        <div class="toolbar">
+          <button id="showMS" class="micro">show m/s</button>
+          <button data-xrp="5000"  id="qx5" class="micro">5k XRP</button>
+          <button data-xrp="10000" id="qx10" class="micro">10k XRP</button>
+          <button data-xrp="15000" id="qx15" class="micro">15k XRP</button>
+        </div>
+      </div>
+
+      <div class="kpis section" id="earningsKpis">
+        <div class="kpi">
+          <div class="k">Monthly Earnings</div>
+          <div class="v"><input class="mono" id="inpMonthly" type="text" placeholder="$0"></div>
+        </div>
+        <div class="kpi">
+          <div class="k">Weekly Earnings</div>
+          <div class="v"><input class="mono" id="inpWeekly" type="text" placeholder="$0"></div>
+        </div>
+        <div class="kpi">
+          <div class="k">Daily Earnings</div>
+          <div class="v"><input class="mono" id="inpDaily" type="text" placeholder="$0"></div>
+        </div>
+        <div class="kpi">
+          <div class="k">Hourly Earnings</div>
+          <div class="v"><input class="mono" id="inpHourly" type="text" placeholder="$0"></div>
+        </div>
+        <div class="kpi" id="kpiMinutely" style="display:none">
+          <div class="k">Minutely Earnings</div>
+          <div class="v"><input class="mono" id="inpMinutely" type="text" placeholder="$0"></div>
+        </div>
+        <div class="kpi" id="kpiSecondly" style="display:none">
+          <div class="k">Secondly Earnings</div>
+          <div class="v"><input class="mono" id="inpSecondly" type="text" placeholder="$0"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // carry over v19 JS unchanged
+    const el = id => document.getElementById(id);
+    const clamp = (v,min,max)=> Math.max(min, Math.min(max,v));
+    function parseMoneyStrict(s){ if(s===undefined||s===null) return NaN; const raw=String(s).replace(/[\$€\s,\.]/g,'').replace(/[^\d-]/g,''); if(!raw||raw==='-') return NaN; return Number(raw); }
+    function fmtUSDintDot(n){ const i=Math.round(Number(n)||0); const sign=i<0?'-':''; const s=String(Math.abs(i)); let out=''; for(let j=0;j<s.length;j++){const idx=s.length-j; out=s[idx-1]+out; if(j%3===2 && idx>1) out='.'+out;} return sign+'$'+out; }
+    const fmtUSD=(n)=> new Intl.NumberFormat('en-US',{style:'currency',currency:'USD',maximumFractionDigits:2}).format(n||0);
+    const fmtEUR=(n)=> new Intl.NumberFormat('nl-NL',{style:'currency',currency:'EUR',maximumFractionDigits:2}).format(n||0);
+    const fmtEUR0=(n)=> new Intl.NumberFormat('nl-NL',{style:'currency',currency:'EUR',maximumFractionDigits:0}).format(Math.round(n||0));
+    const fmtXRP=(n)=> (Number(n||0)).toLocaleString('en-US',{maximumFractionDigits:6});
+
+    const state={priceUSD:0,priceEUR:0,fxEURperUSD:0,xrpHeld:21000,overrideUSD:null,apyOverride:null,msVisible:false,priceSliderVisible:false};
+
+    function setNow(){ document.getElementById('now').textContent=new Date().toLocaleString(undefined,{year:'numeric',month:'long',day:'numeric',hour:'2-digit',minute:'2-digit'}); }
+
+    async function fetchPrices(){
+      try{
+        const r=await fetch('https://api.coingecko.com/api/v3/simple/price?ids=ripple&vs_currencies=usd,eur',{cache:'no-store'});
+        if(!r.ok) throw 0; const j=await r.json();
+        state.priceUSD=Number(j.ripple.usd); state.priceEUR=Number(j.ripple.eur); state.fxEURperUSD=state.priceEUR/(state.priceUSD||1);
+        document.getElementById('source').textContent=state.overrideUSD!==null?'source: Override':'source: CoinGecko';
+      }catch(e){
+        try{
+          const [usdR,eurR]=await Promise.all([fetch('https://api.coinbase.com/v2/prices/XRP-USD/spot',{cache:'no-store'}),fetch('https://api.coinbase.com/v2/prices/XRP-EUR/spot',{cache:'no-store'})]);
+          const usdJ=await usdR.json(), eurJ=await eurR.json();
+          state.priceUSD=Number(usdJ.data.amount); state.priceEUR=Number(eurJ.data.amount); state.fxEURperUSD=state.priceEUR/(state.priceUSD||1);
+          document.getElementById('source').textContent=state.overrideUSD!==null?'source: Override':'source: Coinbase';
+        }catch(_){}
+      }
+      const po=el('priceOverride'); if(po && !po.value){ po.placeholder=fmtUSDintDot(state.priceUSD); }
+      render();
+    }
+
+    function blendedAPY(usdNotional){
+      if(state.apyOverride!==null){ const earn=usdNotional*state.apyOverride; return {earn, apyPct:state.apyOverride*100}; }
+      const t1=Math.min(usdNotional,10_000_000), t2=Math.max(usdNotional-10_000_000,0);
+      const earn=t1*0.10 + t2*0.07; const apyPct=usdNotional>0?(earn/usdNotional)*100:0; return {earn, apyPct};
+    }
+    function invertAPY(targetAnnual){ if(targetAnnual<=0) return 0; if(state.apyOverride!==null){ const r=state.apyOverride||0.000001; return targetAnnual/r; } if(targetAnnual<=1_000_000) return targetAnnual/0.10; return 10_000_000 + (targetAnnual-1_000_000)/0.07; }
+
+    function usedUSDPrice(){ return (state.overrideUSD!==null)? state.overrideUSD : state.priceUSD; }
+    function setOverridePriceInt(p){ const pi=clamp(Math.round(p||0),1,1_000_000); state.overrideUSD=pi; const po=el('priceOverride'); if(po && document.activeElement!==po) po.value=fmtUSDintDot(pi); document.getElementById('source').textContent='source: Override'; syncPriceSliderTo(pi); render(); }
+
+    function render(){
+      const liveUSD=state.priceUSD, liveEUR=state.priceEUR || (state.fxEURperUSD ? liveUSD*state.fxEURperUSD : 0);
+      document.getElementById('xrpUsdTile').textContent=fmtUSD(liveUSD); document.getElementById('xrpEur').textContent=fmtEUR(liveEUR);
+      document.getElementById('eur20k').textContent=fmtEUR0(liveEUR*21000); document.getElementById('eur20kUsd').textContent=fmtUSD(liveEUR*21000*(liveUSD/(liveEUR||1)));
+
+      const useUSD=usedUSDPrice(); const portUsd=(state.xrpHeld||0)*(useUSD||0);
+      document.getElementById('portfolioValInline').textContent=fmtUSDintDot(portUsd);
+      const inpPV=el('inpPortfolioVal'); if(inpPV && document.activeElement!==inpPV){ inpPV.value=fmtUSDintDot(portUsd); }
+
+      const intXrp=Number(el('interestSlider').value); const loanXrp=21000-intXrp;
+      const intUsd=intXrp*(useUSD||0); const loanUsd=loanXrp*(useUSD||0);
+      document.getElementById('intXrp').textContent=(intXrp).toLocaleString('en-US')+' XRP';
+      document.getElementById('loanXrp').textContent=(loanXrp).toLocaleString('en-US')+' XRP';
+      document.getElementById('intUsd').textContent='USD Value: '+fmtUSDintDot(intUsd);
+      document.getElementById('loanUsd').textContent='USD Value: '+fmtUSDintDot(loanUsd);
+      document.getElementById('loanAmount').textContent='Loan Amount: '+fmtUSDintDot(loanUsd*0.30);
+
+      const {earn, apyPct}=blendedAPY(intUsd); document.getElementById('apy').textContent=apyPct.toFixed(2)+'%';
+      document.getElementById('interestEarned').textContent='Interest Earned (est. annual): '+fmtUSD(earn);
+
+      const monthly=earn/12, weekly=earn/52, daily=earn/365, hourly=daily/24, minutely=hourly/60, secondly=minutely/60;
+      const setIfIdle=(id,val)=>{ const n=el(id); if(n && document.activeElement!==n) n.value=fmtUSDintDot(val); };
+      setIfIdle('inpMonthly',monthly); setIfIdle('inpWeekly',weekly); setIfIdle('inpDaily',daily); setIfIdle('inpHourly',hourly);
+      if(state.msVisible){ setIfIdle('inpMinutely',minutely); setIfIdle('inpSecondly',secondly); }
+
+      const psVal=el('priceSliderVal'); if(psVal) psVal.textContent=fmtUSDintDot(usedUSDPrice());
+    }
+
+    // Log slider mapping
+    const SL_MIN=100, SL_MAX=1_000_000, SL_POS_MIN=0, SL_POS_MAX=1000;
+    const lnMin=Math.log(SL_MIN), lnMax=Math.log(SL_MAX), lnSpan=lnMax-lnMin;
+    function posToPrice(pos){ const t=clamp(pos,SL_POS_MIN,SL_POS_MAX)/SL_POS_MAX; const p=Math.exp(lnMin+t*lnSpan); let step=100; if(p>10000 && p<=100000) step=1000; else if(p>100000) step=10000; const q=Math.round(p/step)*step; return clamp(q,SL_MIN,SL_MAX); }
+    function priceToPos(price){ const p=clamp(price,SL_MIN,SL_MAX); const t=(Math.log(p)-lnMin)/lnSpan; return Math.round(t*SL_POS_MAX); }
+    function syncPriceSliderTo(price){ const sl=el('priceSlider'); if(!sl) return; const pos=priceToPos(Number.isFinite(price)?price:10000); sl.value=String(pos); const psVal=el('priceSliderVal'); if(psVal) psVal.textContent=fmtUSDintDot(posToPrice(pos)); }
+
+    function wirePriceControls(){
+      const po=el('priceOverride'), btnApply=el('applyOverride'), btnLive=el('clearOverride');
+      const btnSldr=el('togglePriceSlider'), priceArea=el('priceSliderArea'), sl=el('priceSlider');
+      function applyFromInput(){ const v=parseMoneyStrict(po.value); if(Number.isFinite(v)&&v>0){ setOverridePriceInt(v); } else { state.overrideUSD=null; if(po) po.value=''; document.getElementById('source').textContent='source: CoinGecko'; render(); } }
+      if(po){
+        po.addEventListener('input', ()=>{ const v=parseMoneyStrict(po.value); if(Number.isFinite(v)&&v>0){ state.overrideUSD=clamp(Math.round(v),1,1_000_000); document.getElementById('source').textContent='source: Override'; syncPriceSliderTo(state.overrideUSD); } else { state.overrideUSD=null; document.getElementById('source').textContent='source: CoinGecko'; } render(); });
+        po.addEventListener('blur', ()=>{ const v=parseMoneyStrict(po.value); if(Number.isFinite(v)&&v>0) po.value=fmtUSDintDot(v); else po.value=''; });
+      }
+      if(btnApply) btnApply.addEventListener('click', applyFromInput);
+      if(btnLive) btnLive.addEventListener('click', ()=>{ state.overrideUSD=null; if(po) po.value=''; document.getElementById('source').textContent='source: CoinGecko'; render(); });
+      if(btnSldr){ btnSldr.addEventListener('click', ()=>{ state.priceSliderVisible=!state.priceSliderVisible; priceArea.style.display=state.priceSliderVisible?'block':'none'; if(state.priceSliderVisible){ const base=(state.overrideUSD!==null)?state.overrideUSD:10000; syncPriceSliderTo(base); } }); }
+      if(sl){ sl.addEventListener('input', ()=>{ const price=posToPrice(Number(sl.value)); setOverridePriceInt(price); }); }
+      const qp=el('quickPrice'); if(qp){ qp.addEventListener('click', (e)=>{ const v=e.target.getAttribute?.('data-price'); if(!v) return; setOverridePriceInt(Number(v)); }); }
+    }
+
+    function ensureInterestSide(){ const intS=el('interestSlider'); const loanS=el('loanSlider'); let v=Number(intS.value); if(v<=0){ v=1000; intS.value=String(v); loanS.value=String(21000-v); } return v; }
+    function setPriceForTargetAnnualEarn(targetAnnual){ ensureInterestSide(); const neededIntUsd=invertAPY(targetAnnual); const intXrp=Number(el('interestSlider').value||1); const price=neededIntUsd/intXrp; setOverridePriceInt(price); }
+
+    function wireKpiInputs(){
+      function attachCommit(id, compute){ const n=el(id); if(!n) return; n.addEventListener('keydown', (e)=>{ if(e.key==='Enter'){ e.currentTarget.blur(); } }); n.addEventListener('blur', (e)=>{ const v=parseMoneyStrict(e.target.value); if(Number.isFinite(v)&&v>0){ compute(v); e.target.value=fmtUSDintDot(v); } else { e.target.value=''; } }); }
+      attachCommit('inpPortfolioVal', (usd)=>{ setOverridePriceInt(usd/21000); });
+      attachCommit('inpMonthly', (v)=> setPriceForTargetAnnualEarn(v*12));
+      attachCommit('inpWeekly',  (v)=> setPriceForTargetAnnualEarn(v*52));
+      attachCommit('inpDaily',   (v)=> setPriceForTargetAnnualEarn(v*365));
+      attachCommit('inpHourly',  (v)=> setPriceForTargetAnnualEarn(v*24*365));
+      attachCommit('inpMinutely',(v)=> setPriceForTargetAnnualEarn(v*60*24*365));
+      attachCommit('inpSecondly',(v)=> setPriceForTargetAnnualEarn(v*60*60*24*365));
+    }
+
+    function wireAllocation(){
+      const setBoth=(intVal)=>{ el('interestSlider').value=String(intVal); el('loanSlider').value=String(21000-intVal); render(); };
+      el('interestSlider').addEventListener('input', (e)=>{ const v=clamp(Number(e.target.value),0,21000); setBoth(v); });
+      el('loanSlider').addEventListener('input', (e)=>{ const v=clamp(Number(e.target.value),0,21000); setBoth(21000-v); });
+      el('qx5').addEventListener('click', ()=> setBoth(5000));
+      el('qx10').addEventListener('click',()=> setBoth(10000));
+      el('qx15').addEventListener('click',()=> setBoth(15000));
+    }
+
+    function wireMisc(){
+      el('showMS').addEventListener('click', ()=>{ state.msVisible=!state.msVisible; el('kpiMinutely').style.display=state.msVisible?'':'none'; el('kpiSecondly').style.display=state.msVisible?'':'none'; render(); });
+      el('apy5').addEventListener('click', ()=>{ state.apyOverride=0.05; render(); });
+      el('apy10').addEventListener('click', ()=>{ state.apyOverride=0.10; render(); });
+      el('apyReset').addEventListener('click', ()=>{ state.apyOverride=null; render(); });
+    }
+
+    function init(){ setNow(); setInterval(setNow,60_000); wirePriceControls(); wireKpiInputs(); wireAllocation(); wireMisc(); fetchPrices(); setInterval(fetchPrices,60_000); render(); }
+    init();
+  </script>
+</body>
+</html>
