@@ -54,7 +54,7 @@
     .pv-input-wrap{ flex:1 }
     .pv-inline input{ width:100% }
     
-    #apy{ text-align:center; width:100%     transform: translateY(42px); }
+    #apy{ text-align:center; width:100%; display:flex; align-items:center; justify-content:center; font-weight:600; }
     
     .apy-btn{ color:#cfd6e4 !important; border-color:#2a3a59 !important; background:#0b1220 !important; padding:2px 5px !important; font-size:11px !important }
     
@@ -76,15 +76,32 @@
 </head>
 <body>
   <div class="container">
-    <div class="row wrap" style="align-items:center;justify-content:space-between;margin-bottom:8px">
-      <div class="pill">XRP pricing</div>
-      <div class="pill" id="now">—</div>
+    <!-- TradingView Chart: XRPUSD -->
+    
+    <style>
+      .tv-card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;gap:8px}
+      .tv-btns{display:flex;gap:6px}
+      .tv-btn{background:#0b1220;border:1px solid #22314b;border-radius:10px;padding:6px 10px;font-size:12px;color:#e6edf3;cursor:pointer}
+      .tv-btn:active{transform:translateY(1px)}
+    </style>
+    <div class="card" style="margin-bottom:8px">
+      <div class="tv-card-header">
+        <div class="title">XRPUSD — TradingView</div>
+        <div class="tv-btns">
+          <button class="tv-btn" id="btn_pair">$/€</button>
+          <button class="tv-btn" id="btn_usd_1.2k">$1.2k</button>
+          <button class="tv-btn" id="btn_eur_1.2k">€1.2k</button>
+        </div>
+      </div>
+      <div id="tv_xrp_container" style="height:420px; width:100%"></div>
     </div>
+    
 
     <!-- Live price tiles -->
     <div class="card">
       <div class="row" style="justify-content:space-between;align-items:center">
         <div class="subtitle" id="source">source: —</div>
+    <button id="refreshBtn" class="micro apy-btn">⟳</button>
       </div>
       <div class="grid section">
         <div class="tile">
@@ -96,11 +113,11 @@
           <div class="val mono" id="xrpUsdTile">$0.00</div>
         </div>
         <div class="tile">
-          <div class="label">XRPEUR × 1,200</div>
+          <div class="label">XRPEUR × 1.200</div>
           <div class="val mono" id="eurHeld">€0</div>
         </div>
         <div class="tile">
-          <div class="label">XRPUSD × 1,200</div>
+          <div class="label">XRPUSD × 1.200</div>
           <div class="val mono" id="usdHeld">$0</div>
         </div>
       </div>
@@ -108,7 +125,7 @@
 
     <!-- Portfolio Manager -->
     <div class="card section">
-      <h3 class="title">XRP Portfolio Manager</h3>
+      <div class="row" style="align-items:center;justify-content:space-between;margin-bottom:8px"><h3 class="title" style="margin:0">XRP Portfolio Manager</h3><div class="pill" id="now">—</div></div>
 
       <div class="section">
         <div class="row" style="gap:8px;margin-top:6px">
@@ -155,7 +172,7 @@
         </div>
         <div class="kpi">
           <div class="k" style="display:flex;justify-content:space-between;align-items:center;gap:6px">
-            APY <span><button class="micro" id="apy5" class="micro pill-btn apy-btn">5%</button> <button class="micro apy-btn" id="apy7_5" class="micro">7.5%</button> <button class="micro apy-btn" id="apy10" class="micro">10%</button> <button class="micro apy-btn" id="apyReset" class="micro">r</button></span>
+            APY <span><button id="apy5" class="micro apy-btn pill-btn">5%</button> <button id="apy7_5" class="micro apy-btn">7.5%</button> <button id="apy10" class="micro apy-btn">10%</button> <button id="apyReset" class="micro apy-btn">r</button></span>
           </div>
           <div class="v mono" id="apy">0%</div>
         </div>
@@ -169,7 +186,7 @@
               <div class="inline-pair"><div class="mono" id="intXrp">0 XRP</div><div class="subtitle mono" id="intUsd">$0</div></div>
             </div>
           </div>
-          <input id="interestSlider" type="range" min="0" max="1200" step="100" value="600">
+          <input id="interestSlider" type="range" min="0" max="1200" step="100" step="100" value="1000">
           <div class="subtitle mono" id="interestEarned">Interest: $0</div>
         </div>
 
@@ -180,12 +197,12 @@
               <div class="inline-pair"><div class="mono" id="loanXrp">0 XRP</div><div class="subtitle mono" id="loanUsd">$0</div></div>
             </div>
           </div>
-          <input id="loanSlider" type="range" min="0" max="1200" step="100" value="600">
+          <input id="loanSlider" type="range" min="0" max="1200" step="100" step="100" value="200">
           <div class="subtitle mono" id="loanAmount">Loan: $0</div>
         </div>
       </div>
 
-      <div class="row" style="justify-content:space-between;align-items:center;margin-top:8px"><div class="toolbar"><button class="micro apy-btn" id="showMS" class="micro apy-btn">show minute/second</button></div><div class="toolbar"><button class="micro apy-btn" data-xrp="300" id="qx5" class="micro apy-btn">300 XRP</button> <button class="micro apy-btn" data-xrp="600" id="qx10" class="micro apy-btn">600 XRP</button> <button class="micro apy-btn" data-xrp="900" id="qx15" class="micro apy-btn">900 XRP</button></div></div>
+      <div class="row" style="justify-content:space-between;align-items:center;margin-top:8px"><div class="toolbar"><button id="showMS" class="micro apy-btn">show minute/second</button></div><div class="toolbar"><button data-xrp="300" id="qx5" class="micro apy-btn">300 XRP</button> <button data-xrp="600" id="qx10" class="micro apy-btn">600 XRP</button> <button data-xrp="900" id="qx15" class="micro apy-btn">900 XRP</button></div></div>
 
       <div class="kpis section" id="earningsKpis">
         <div class="kpi">
@@ -304,7 +321,8 @@
       apyOverride: null,
       msVisible: false,
       priceSliderVisible: false,
-      ltv: 0.30
+      ltv: 0.30,
+      decimals4: false
     };
 
     function setNow(){
@@ -363,8 +381,10 @@
     function render(){
       const liveUSD = state.priceUSD;
       const liveEUR = state.priceEUR || (state.fxEURperUSD ? liveUSD * state.fxEURperUSD : 0);
-      el('xrpUsdTile').textContent = fmtUSD(liveUSD);
-      el('xrpEur').textContent = fmtEUR(liveEUR);
+      const usdFmt = new Intl.NumberFormat('en-US',{style:'currency',currency:'USD',minimumFractionDigits: state.decimals4 ? 4 : 2, maximumFractionDigits: state.decimals4 ? 4 : 2});
+      const eurFmt = new Intl.NumberFormat('nl-NL',{style:'currency',currency:'EUR',minimumFractionDigits: state.decimals4 ? 4 : 2, maximumFractionDigits: state.decimals4 ? 4 : 2});
+      el('xrpUsdTile').textContent = usdFmt.format(liveUSD);
+      el('xrpEur').textContent = eurFmt.format(liveEUR);
       el('eurHeld').textContent = fmtEUR0(liveEUR * state.xrpHeld);
       el('usdHeld').textContent = fmtUSDintDot(liveUSD * state.xrpHeld);
 
@@ -491,17 +511,85 @@
       el('apyReset').addEventListener('click', ()=>{ state.apyOverride=null; render(); });
     }
 
-    function init(){
+    
+function wireRefreshButton(){
+  const btn = document.getElementById('refreshBtn');
+  if(!btn) return;
+  btn.addEventListener('click', ()=> {
+    fetchPrices();
+  });
+}
+
+
+function wireDecimalsButton(){
+  const btn = document.getElementById('toggleDecimals');
+  if(!btn) return;
+  btn.addEventListener('click', async ()=>{
+    state.decimals4 = !state.decimals4;
+    try{ await fetchPrices(); }catch(_){}
+    render();
+  })
+;
+}
+
+function init(){
       setNow(); setInterval(setNow, 60_000);
       wirePriceControls();
       wireKpiInputs();
       wireAllocation();
       wireLTVButtons();
       wireMisc();
+      wireRefreshButton();
+      wireDecimalsButton();
       fetchPrices(); setInterval(fetchPrices, 60_000);
       render();
     }
     init();
   </script>
+
+  
+  <!-- TradingView Advanced Chart Widget -->
+  <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
+  <script>
+    (function(){
+      function mountWidget(symbol){
+        if (!window.TradingView) return;
+        // Clear container to fully remount
+        var el = document.getElementById("tv_xrp_container");
+        el.innerHTML = "";
+        new TradingView.widget({
+          autosize: true,
+          symbol: symbol,
+          interval: "60",
+          timezone: "Etc/UTC",
+          theme: "dark",
+          style: "9",                 // area/line-like style
+          withdateranges: true,
+          hide_side_toolbar: true,
+          hide_legend: true,
+          save_image: false,
+          allow_symbol_change: false,
+          studies: [],
+          container_id: "tv_xrp_container",
+          locale: "en",
+          hide_volume: true
+        });
+        // Title text
+        var title = document.querySelector(".tv-card-header .title");
+        title.textContent = symbol.replace("BITSTAMP:","").replace("KRAKEN:","");
+      }
+
+      // initial
+      var defaultSymbol = "BITSTAMP:XRPUSD";
+      function ready(fn){document.readyState!=='loading'?fn():document.addEventListener('DOMContentLoaded',fn);}
+      ready(function(){
+        mountWidget(defaultSymbol);
+        // controls
+        var tvIsEUR=false;document.getElementById("btn_pair").addEventListener("click", function(){ tvIsEUR=!tvIsEUR; mountWidget(tvIsEUR? "BITSTAMP:XRPEUR":"BITSTAMP:XRPUSD"); }); document.getElementById("btn_usd_1.2k").addEventListener("click", function(){ mountWidget("BITSTAMP:XRPUSD*1200"); });
+        document.getElementById("btn_eur_1.2k").addEventListener("click", function(){ mountWidget("BITSTAMP:XRPEUR*1200"); });
+      });
+    })();
+  </script>
+
 </body>
 </html>
