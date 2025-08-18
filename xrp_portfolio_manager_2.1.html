@@ -76,12 +76,6 @@
 </head>
 <body>
   <div class="container">
-    <div class="row wrap" style="align-items:center;justify-content:space-between;margin-bottom:8px">
-      <div class="pill">XRP pricing</div>
-      <div class="pill" id="now">—</div>
-    </div>
-
-    
     <!-- TradingView Chart: XRPUSD -->
     
     <style>
@@ -94,9 +88,9 @@
       <div class="tv-card-header">
         <div class="title">XRPUSD — TradingView</div>
         <div class="tv-btns">
-          <button class="tv-btn" id="btn_eur">€</button>
-          <button class="tv-btn" id="btn_usd_20k">$20k</button>
-          <button class="tv-btn" id="btn_eur_20k">€20k</button>
+          <button class="tv-btn" id="btn_pair">$/€</button>
+          <button class="tv-btn" id="btn_usd_21k">$21k</button>
+          <button class="tv-btn" id="btn_eur_21k">€21k</button>
         </div>
       </div>
       <div id="tv_xrp_container" style="height:420px; width:100%"></div>
@@ -107,7 +101,6 @@
     <div class="card">
       <div class="row" style="justify-content:space-between;align-items:center">
         <div class="subtitle" id="source">source: —</div>
-    <button id="toggleDecimals" class="micro apy-btn">4d</button>
     <button id="refreshBtn" class="micro apy-btn">⟳</button>
       </div>
       <div class="grid section">
@@ -132,7 +125,7 @@
 
     <!-- Portfolio Manager -->
     <div class="card section">
-      <h3 class="title">XRP Portfolio Manager</h3>
+      <div class="row" style="align-items:center;justify-content:space-between;margin-bottom:8px"><h3 class="title" style="margin:0">XRP Portfolio Manager</h3><div class="pill" id="now">—</div></div>
 
       <div class="section">
         <div class="row" style="gap:8px;margin-top:6px">
@@ -209,7 +202,7 @@
         </div>
       </div>
 
-      <div class="row" style="justify-content:space-between;align-items:center;margin-top:8px"><div class="toolbar"><button id="showMS" class="micro apy-btn">show minute/second</button></div><div class="toolbar"><button data-xrp="5000" id="qx5" class="micro apy-btn">5k XRP</button> <button data-xrp="10000" id="qx10" class="micro apy-btn">10k XRP</button> <button data-xrp="15000" id="qx15" class="micro apy-btn">15k XRP</button></div></div>
+      <div class="row" style="justify-content:space-between;align-items:center;margin-top:8px"><div class="toolbar"><button data-xrp="5000" id="qx5" class="micro apy-btn">5k XRP</button> <button data-xrp="10000" id="qx10" class="micro apy-btn">10k XRP</button> <button data-xrp="15000" id="qx15" class="micro apy-btn">15k XRP</button></div><div class="toolbar"><button id="showMS" class="micro apy-btn">show minute/second</button></div></div>
 
       <div class="kpis section" id="earningsKpis">
         <div class="kpi">
@@ -531,10 +524,12 @@ function wireRefreshButton(){
 function wireDecimalsButton(){
   const btn = document.getElementById('toggleDecimals');
   if(!btn) return;
-  btn.addEventListener('click', ()=>{
+  btn.addEventListener('click', async ()=>{
     state.decimals4 = !state.decimals4;
+    try{ await fetchPrices(); }catch(_){}
     render();
-  });
+  })
+;
 }
 
 function init(){
@@ -565,10 +560,10 @@ function init(){
         new TradingView.widget({
           autosize: true,
           symbol: symbol,
-          interval: "W",
+          interval: "60",
           timezone: "Etc/UTC",
           theme: "dark",
-          style: "9",                 // area/line-like style
+          style: "8",                 // area/line-like style
           withdateranges: true,
           hide_side_toolbar: true,
           hide_legend: true,
@@ -581,7 +576,7 @@ function init(){
         });
         // Title text
         var title = document.querySelector(".tv-card-header .title");
-        title.textContent = symbol.replace("BITSTAMP:","").replace("KRAKEN:","") + " — TradingView";
+        title.textContent = symbol.replace("BITSTAMP:","").replace("KRAKEN:","");
       }
 
       // initial
@@ -590,9 +585,8 @@ function init(){
       ready(function(){
         mountWidget(defaultSymbol);
         // controls
-        document.getElementById("btn_eur").addEventListener("click", function(){ mountWidget("BITSTAMP:XRPEUR"); });
-        document.getElementById("btn_usd_20k").addEventListener("click", function(){ mountWidget("BITSTAMP:XRPUSD*20000"); });
-        document.getElementById("btn_eur_20k").addEventListener("click", function(){ mountWidget("BITSTAMP:XRPEUR*20000"); });
+        var tvIsEUR=false;document.getElementById("btn_pair").addEventListener("click", function(){ tvIsEUR=!tvIsEUR; mountWidget(tvIsEUR? "BITSTAMP:XRPEUR":"BITSTAMP:XRPUSD"); }); document.getElementById("btn_usd_21k").addEventListener("click", function(){ mountWidget("BITSTAMP:XRPUSD*21000"); });
+        document.getElementById("btn_eur_21k").addEventListener("click", function(){ mountWidget("BITSTAMP:XRPEUR*21000"); });
       });
     })();
   </script>
