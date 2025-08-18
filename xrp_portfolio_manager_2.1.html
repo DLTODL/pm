@@ -81,6 +81,28 @@
       <div class="pill" id="now">—</div>
     </div>
 
+    
+    <!-- TradingView Chart: XRPUSD -->
+    
+    <style>
+      .tv-card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;gap:8px}
+      .tv-btns{display:flex;gap:6px}
+      .tv-btn{background:#0b1220;border:1px solid #22314b;border-radius:10px;padding:6px 10px;font-size:12px;color:#e6edf3;cursor:pointer}
+      .tv-btn:active{transform:translateY(1px)}
+    </style>
+    <div class="card" style="margin-bottom:8px">
+      <div class="tv-card-header">
+        <div class="title">XRPUSD — TradingView</div>
+        <div class="tv-btns">
+          <button class="tv-btn" id="btn_eur">€</button>
+          <button class="tv-btn" id="btn_usd_20k">$20k</button>
+          <button class="tv-btn" id="btn_eur_20k">€20k</button>
+        </div>
+      </div>
+      <div id="tv_xrp_container" style="height:420px; width:100%"></div>
+    </div>
+    
+
     <!-- Live price tiles -->
     <div class="card">
       <div class="row" style="justify-content:space-between;align-items:center">
@@ -529,5 +551,51 @@ function init(){
     }
     init();
   </script>
+
+  
+  <!-- TradingView Advanced Chart Widget -->
+  <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
+  <script>
+    (function(){
+      function mountWidget(symbol){
+        if (!window.TradingView) return;
+        // Clear container to fully remount
+        var el = document.getElementById("tv_xrp_container");
+        el.innerHTML = "";
+        new TradingView.widget({
+          autosize: true,
+          symbol: symbol,
+          interval: "W",
+          timezone: "Etc/UTC",
+          theme: "dark",
+          style: "9",                 // area/line-like style
+          withdateranges: true,
+          hide_side_toolbar: true,
+          hide_legend: true,
+          save_image: false,
+          allow_symbol_change: false,
+          studies: [],
+          container_id: "tv_xrp_container",
+          locale: "en",
+          hide_volume: true
+        });
+        // Title text
+        var title = document.querySelector(".tv-card-header .title");
+        title.textContent = symbol.replace("BITSTAMP:","").replace("KRAKEN:","") + " — TradingView";
+      }
+
+      // initial
+      var defaultSymbol = "BITSTAMP:XRPUSD";
+      function ready(fn){document.readyState!=='loading'?fn():document.addEventListener('DOMContentLoaded',fn);}
+      ready(function(){
+        mountWidget(defaultSymbol);
+        // controls
+        document.getElementById("btn_eur").addEventListener("click", function(){ mountWidget("BITSTAMP:XRPEUR"); });
+        document.getElementById("btn_usd_20k").addEventListener("click", function(){ mountWidget("BITSTAMP:XRPUSD*20000"); });
+        document.getElementById("btn_eur_20k").addEventListener("click", function(){ mountWidget("BITSTAMP:XRPEUR*20000"); });
+      });
+    })();
+  </script>
+
 </body>
 </html>
