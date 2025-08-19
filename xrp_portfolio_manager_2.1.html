@@ -13,7 +13,7 @@
     .row.wrap{flex-wrap:wrap}
     .card{background:var(--card);border-radius:var(--radius);padding:12px}
     .pill{display:inline-flex;align-items:center;gap:6px;background:#0b1220;border:1px solid #263041;padding:6px 10px;border-radius:999px;font-size:12px;color:var(--muted)}
-    .title{font-size:18px;font-weight:700;margin:0 0 8px}
+    .title{font-size:9px;font-weight:700;margin:0 0 8px}
     .subtitle{font-size:12px;color:var(--muted);margin-top:2px}
     .grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
     .tile{flex:1;min-width:46%;padding:12px;border-radius:14px;background:#0f1726;border:1px solid #22314b}
@@ -70,7 +70,7 @@
   color:#cfd6e4 !important;
 }
 .pill-btn:focus, .pill-btn:hover{ color:#dfe6f4 !important; border-color:#34496f !important; }
-.pill-btn.btn-white{ color:#ffffff !important; }.apy-btn{ color:#cfd6e4 !important; } /* pale off-white for APY and other small buttons */
+.pill-btn.btn-white{ color:#ffffff !important; }.apy-btn{ color:#cfd6e4 !important; } /* pale off-white for APY && other small buttons */
     .btn-white{ color:#ffffff !important; }
     </style>
 </head>
@@ -89,11 +89,14 @@
         <div class="title">XRPUSD — TradingView</div>
         <div class="tv-btns">
           <button class="tv-btn" id="btn_pair">$/€</button>
-          <button class="tv-btn" id="btn_usd_21k">$21k</button>
-          <button class="tv-btn" id="btn_eur_21k">€21k</button>
+          <button class="tv-btn" id="btn_m">m</button>
+          <button class="tv-btn" id="btn_usd_20k">$21k</button>
+          <button class="tv-btn" id="btn_eur_20k">€21k</button>
         </div>
       </div>
       <div id="tv_xrp_container" style="height:420px; width:100%"></div>
+      <div id="tv_m_container" style="height:420px; width:100%; display:none"></div>
+      <div id="mini_container" style="height:420px; width:100%; display:none"></div>
     </div>
     
 
@@ -549,47 +552,226 @@ function init(){
 
   
   <!-- TradingView Advanced Chart Widget -->
+  
+  <!-- TradingView Advanced + Overview + Overview20k (Integrated) -->
   <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
   <script>
     (function(){
-      function mountWidget(symbol){
-        if (!window.TradingView) return;
-        // Clear container to fully remount
+      var headerEl = document.querySelector(".tv-card-header .title");
+      function setHeaderLabel(sym){ if(headerEl) headerEl.textContent = sym; }
+
+      var mode = "advanced";           // advanced | overview | mini
+      var isEUR = false;               // $/€
+      var mFirst = true;               // first 'm' press = XRPUSD
+      var mIsEUR = false;              // toggler for 'm'
+      var kCurrency = null;            // 'usd' or 'eur' for 20k buttons
+
+      function showContainer(which){
+        mode = which;
+        var adv  = document.getElementById("tv_xrp_container");
+        var ov   = document.getElementById("tv_m_container");
+        var mini = document.getElementById("mini_container");
+        if(adv)  adv.style.display  = which==="advanced" ? "block":"none";
+        if(ov)   ov.style.display   = which==="overview" ? "block":"none";
+        if(mini) mini.style.display = which==="mini" ? "block":"none";
+      }
+
+      // Advanced chart (hide volume)
+      function mountAdvanced(symbol){
+        if(!window.TradingView) return;
         var el = document.getElementById("tv_xrp_container");
-        el.innerHTML = "";
+        if(el) el.innerHTML = "";
         new TradingView.widget({
           autosize: true,
           symbol: symbol,
           interval: "60",
           timezone: "Etc/UTC",
           theme: "dark",
-          style: "8",                 // area/line-like style
+          style: "1",
           withdateranges: true,
           hide_side_toolbar: true,
           hide_legend: true,
-          save_image: false,
+          hide_volume: true,
           allow_symbol_change: false,
           studies: [],
-          container_id: "tv_xrp_container",
-          locale: "en",
-          hide_volume: true
+          container_id: "tv_xrp_container"
         });
-        // Title text
-        var title = document.querySelector(".tv-card-header .title");
-        title.textContent = symbol.replace("BITSTAMP:","").replace("KRAKEN:","");
+        showContainer("advanced");
+        setHeaderLabel(symbol.split(":").pop());
       }
 
-      // initial
-      var defaultSymbol = "BITSTAMP:XRPUSD";
-      function ready(fn){document.readyState!=='loading'?fn():document.addEventListener('DOMContentLoaded',fn);}
-      ready(function(){
-        mountWidget(defaultSymbol);
-        // controls
-        var tvIsEUR=false;document.getElementById("btn_pair").addEventListener("click", function(){ tvIsEUR=!tvIsEUR; mountWidget(tvIsEUR? "BITSTAMP:XRPEUR":"BITSTAMP:XRPUSD"); }); document.getElementById("btn_usd_21k").addEventListener("click", function(){ mountWidget("BITSTAMP:XRPUSD*21000"); });
-        document.getElementById("btn_eur_21k").addEventListener("click", function(){ mountWidget("BITSTAMP:XRPEUR*21000"); });
-      });
+      // Symbol Overview (non-expression) for 'm' button
+      function mountOverview(symbol){
+        var container = document.getElementById("tv_m_container");
+        if(!container) return;
+        container.innerHTML = "";
+        var wrapper = document.createElement("div");
+        wrapper.className = "tradingview-widget-container";
+        var inner = document.createElement("div");
+        inner.className = "tradingview-widget-container__widget";
+        wrapper.appendChild(inner);
+
+        var s = document.createElement("script");
+        s.type = "text/javascript";
+        s.async = true;
+        s.src = "https://s3.tradingview.com/external-embedding/embed-widget-symbol-overview.js";
+        var cfg = {
+          "symbols": [[ symbol + "|7D" ]],
+          "chartOnly": false,
+          "width": "100%",
+          "height": "100%",
+          "locale": "en",
+          "colorTheme": "dark",
+          "autosize": true,
+          "showVolume": false,
+          "showMA": false,
+          "hideDateRanges": false,
+          "hideMarketStatus": true,
+          "hideSymbolLogo": false,
+          "scalePosition": "right",
+          "scaleMode": "Normal",
+          "fontFamily": "-apple-system, BlinkMacSystemFont, Trebuchet MS, Roboto, Ubuntu, sans-serif",
+          "fontSize": "10",
+          "noTimeScale": false,
+          "valuesTracking": "1",
+          "changeMode": "price-and-percent",
+          "chartType": "area",
+          "maLineColor": "#2962FF",
+          "maLineWidth": 1,
+          "maLength": 9,
+          "headerFontSize": "medium",
+          "lineWidth": 2,
+          "lineType": 0,
+          "dateRanges": [
+            "1w|60",
+            "1m|30",
+            "3m|60",
+            "ytd|1D",
+            "12m|1D",
+            "60m|1W",
+            "all|1M"
+          ],
+          "dateFormat": "dd MMM 'yy"
+        };
+        s.innerHTML = JSON.stringify(cfg);
+        wrapper.appendChild(s);
+        container.appendChild(wrapper);
+        showContainer("overview");
+        setHeaderLabel(symbol.split(":").pop());
+      }
+
+      // Symbol Overview for *21000 (avoid intraday by using daily+ ranges)
+      function mountOverview20k(symbolExpr){
+        var mini = document.getElementById("mini_container");
+        if(!mini) return;
+        mini.innerHTML = "";
+        var wrapper = document.createElement("div");
+        wrapper.className = "tradingview-widget-container";
+        var inner = document.createElement("div");
+        inner.className = "tradingview-widget-container__widget";
+        wrapper.appendChild(inner);
+
+        var s = document.createElement("script");
+        s.type = "text/javascript";
+        s.async = true;
+        s.src = "https://s3.tradingview.com/external-embedding/embed-widget-symbol-overview.js";
+        var cfg = {
+          "symbols": [[ symbolExpr + "|7D" ]],
+          "chartOnly": false,
+          "width": "100%",
+          "height": "100%",
+          "locale": "en",
+          "colorTheme": "dark",
+          "autosize": true,
+          "showVolume": false,
+          "showMA": false,
+          "hideDateRanges": false,
+          "hideMarketStatus": true,
+          "hideSymbolLogo": false,
+          "scalePosition": "right",
+          "scaleMode": "Normal",
+          "fontFamily": "-apple-system, BlinkMacSystemFont, Trebuchet MS, Roboto, Ubuntu, sans-serif",
+          "fontSize": "10",
+          "noTimeScale": false,
+          "valuesTracking": "1",
+          "changeMode": "price-and-percent",
+          "chartType": "area",
+          "maLineColor": "#2962FF",
+          "maLineWidth": 1,
+          "maLength": 9,
+          "headerFontSize": "medium",
+          "lineWidth": 2,
+          "lineType": 0,
+          "dateRanges": [
+            "1w|1D",
+            "1m|1D",
+            "3m|1D",
+            "ytd|1D",
+            "12m|1D",
+            "60m|1W",
+            "all|1M"
+          ],
+          "dateFormat": "dd MMM 'yy"
+        };
+        s.innerHTML = JSON.stringify(cfg);
+        wrapper.appendChild(s);
+        mini.appendChild(wrapper);
+        showContainer("mini");
+        setHeaderLabel(symbolExpr.split(":").pop());
+      }
+
+      // --- Buttons wiring ---
+      var btnPair = document.getElementById("btn_pair");
+      var btnM    = document.getElementById("btn_m");
+      var btnUSDk = document.getElementById("btn_usd_20k");
+      var btnEURk = document.getElementById("btn_eur_20k");
+
+      if(btnPair){
+        btnPair.addEventListener("click", function(){
+          isEUR = !isEUR;
+          var sym = isEUR ? "BITSTAMP:XRPEUR" : "BITSTAMP:XRPUSD";
+          mountAdvanced(sym);
+        });
+      }
+
+      if(btnM){
+        btnM.addEventListener("click", function(){
+          if(mFirst){ mFirst = false; mIsEUR = false; } else { mIsEUR = !mIsEUR; }
+          var sym = mIsEUR ? "BITSTAMP:XRPEUR" : "BITSTAMP:XRPUSD";
+          mountOverview(sym);
+        });
+      }
+
+      if(btnUSDk){
+        btnUSDk.addEventListener("click", function(){
+          var expr = "BITSTAMP:XRPUSD*21000";
+          if(mode === "advanced" && kCurrency === "usd"){
+            mountOverview20k(expr);
+          } else {
+            mountAdvanced(expr);
+            kCurrency = "usd";
+          }
+        });
+      }
+      if(btnEURk){
+        btnEURk.addEventListener("click", function(){
+          var expr = "BITSTAMP:XRPEUR*21000";
+          if(mode === "advanced" && kCurrency === "eur"){
+            mountOverview20k(expr);
+          } else {
+            mountAdvanced(expr);
+            kCurrency = "eur";
+          }
+        });
+      }
+
+      // init
+      showContainer("advanced");
+      mountAdvanced("BITSTAMP:XRPUSD");
     })();
   </script>
 
+
 </body>
 </html>
+
