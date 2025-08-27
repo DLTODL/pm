@@ -155,8 +155,8 @@
           <button class="tv-btn" id="btn_pair">$/€</button>
           <!-- no theme button here -->
           <button class="tv-btn" id="btn_m">m</button>
-          <button class="tv-btn" id="btn_usd_20k">$21k</button>
-          <button class="tv-btn" id="btn_eur_20k">€21k</button>
+          <button class="tv-btn" id="btn_usd_21k">$21k</button>
+          <button class="tv-btn" id="btn_eur_21k">€21k</button>
         </div>
       </div>
       <div id="tv_xrp_container" style="height:420px; width:100%"></div>
@@ -267,7 +267,7 @@
               <div class="inline-pair"><div class="mono" id="intXrp">0 XRP</div><div class="subtitle mono" id="intUsd">$0</div></div>
             </div>
           </div>
-          <input id="interestSlider" type="range" min="0" max="21000" step="100" step="100" value="10000">
+          <input id="interestSlider" type="range" min="0" max="21000" step="100" value="10500">
           <div class="subtitle mono" id="interestEarned">Interest: $0</div>
         </div>
 
@@ -278,7 +278,7 @@
               <div class="inline-pair"><div class="mono" id="loanXrp">0 XRP</div><div class="subtitle mono" id="loanUsd">$0</div></div>
             </div>
           </div>
-          <input id="loanSlider" type="range" min="0" max="21000" step="100" step="100" value="10000">
+          <input id="loanSlider" type="range" min="0" max="21000" step="100" value="10500">
           <div class="subtitle mono" id="loanAmount">Loan: $0</div>
         </div>
       </div>
@@ -320,7 +320,7 @@
     const clamp = (v,min,max)=> Math.max(min, Math.min(max,v));
     function parseMoneyStrict(s){
       if(s===undefined || s===null) return NaN;
-      const raw = String(s).replace(/[\\$€\\s,\\.]/g,'').replace(/[^\\d-]/g,'');
+      const raw = String(s).replace(/[\$€\s,\.]/g,'').replace(/[^\d-]/g,'');
       if(!raw || raw==='-') return NaN;
       return Number(raw);
     }
@@ -372,7 +372,7 @@
         }
       }
       const i = Math.round(abs);
-      const s = String(i).replace(/\\B(?=(\\d{3})+(?!\\d))/g, '.');
+      const s = String(i).replace(/\B(?=(\d{3})+(?!\d))/g, '.');
       return sign + symbol + s;
     }
     function fmtEURsmart(n){
@@ -401,7 +401,7 @@
         if(abs >= u.v){
           let val = abs / u.v;
           const decimals = (abs < 100*u.v) ? 1 : 0;
-          const str = val.toFixed(decimals).replace(/\\.0$/,'');
+          const str = val.toFixed(decimals).replace(/\.0$/,'');
           return sign + '$' + str + u.s;
         }
       }
@@ -430,7 +430,7 @@
           let val = abs / u.v;
           // Show one decimal place if the value is below 100 units; otherwise no decimals.
           const decimals = (abs < 100*u.v) ? 1 : 0;
-          const str = val.toFixed(decimals).replace(/\\.0$/,'');
+          const str = val.toFixed(decimals).replace(/\.0$/,'');
           return sign + '€' + str + u.s;
         }
 
@@ -443,12 +443,12 @@
       const abs = Math.abs(Number(n)||0);
       if(abs >= 1_000_000){
         const raw = abs / 1_000_000;
-        const str = (raw < 10) ? raw.toFixed(1).replace(/\\.0$/,'') : Math.round(raw).toString();
+        const str = (raw < 10) ? raw.toFixed(1).replace(/\.0$/,'') : Math.round(raw).toString();
         return '$' + str + 'm';
       }
       if(abs >= 1_000){
         const raw = abs / 1_000;
-        const str = (raw < 10) ? raw.toFixed(1).replace(/\\.0$/,'') : Math.round(raw).toString();
+        const str = (raw < 10) ? raw.toFixed(1).replace(/\.0$/,'') : Math.round(raw).toString();
         return '$' + str + 'k';
       }
       return '$' + Math.round(abs);
@@ -720,6 +720,9 @@
       }
       const modeLbl=el('sliderModeLabel');
       if(modeLbl){
+        // Always display the slider range in USD for clarity, even when
+        // portfolio manager currency is EUR.  Use commas for thousands and
+        // hyphens between bounds.
         if(state.sliderMode==='log'){
           modeLbl.textContent = 'log ($100-$1.000.000)';
         } else {
@@ -784,6 +787,11 @@ function wirePriceControls(){
         sl.addEventListener('input', ()=>{
           const raw=Number(sl.value);
           const price=(state.sliderMode==='log')?posToPriceLog(raw):posToPriceLow(raw);
+          // price is computed in USD.  Keep overrideUSD in USD.  When
+          // sliding, update the override price and synchronise the slider
+          // display manually since setOverridePriceInt no longer moves the
+          // slider preview.  This provides real-time feedback and applies
+          // the override during the interaction.
           setOverridePriceInt(price);
           syncPriceSliderTo(price);
         });
@@ -795,7 +803,8 @@ function wirePriceControls(){
           if(!v) return;
           const num = Number(v);
           if(!Number.isFinite(num) || num <= 0) return;
-          // Always interpret preset amounts as USD.
+          // Always interpret preset amounts as USD.  Selecting a preset sets
+          // overrideUSD directly without conversion, regardless of pmCurrency.
           setOverridePriceInt(num);
         });
       }
@@ -971,7 +980,7 @@ function wirePriceControls(){
   
   <!-- TradingView Advanced Chart Widget -->
   
-  <!-- TradingView Advanced + Overview + Overview20k (Integrated) -->
+  <!-- TradingView Advanced + Overview + Overview21k (Integrated) -->
   <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
   <script>
     (function(){
@@ -982,7 +991,7 @@ function wirePriceControls(){
       var isEUR = false;               // $/€
       var mFirst = true;               // first 'm' press = XRPUSD
       var mIsEUR = false;              // toggler for 'm'
-      var kCurrency = null;            // 'usd' or 'eur' for 20k buttons
+      var kCurrency = null;            // 'usd' or 'eur' for 21k buttons
 
       // Track current symbols/expressions for remounting
       var lastSymbol = "BITSTAMP:XRPUSD";
@@ -1088,7 +1097,7 @@ function wirePriceControls(){
       }
 
       // Symbol Overview for *21000
-      function mountOverview20k(symbolExpr){
+      function mountOverview21k(symbolExpr){
         lastExpr = symbolExpr;
         var mini = document.getElementById("mini_container");
         if(!mini) return;
@@ -1156,7 +1165,12 @@ function wirePriceControls(){
         } else if(mode === "overview"){
           mountOverview(lastOverviewSymbol);
         } else if(mode === "mini" && lastExpr){
-          mountOverview20k(lastExpr);
+          // pick correct overview mount based on whether last expression contains *21000
+          if(String(lastExpr).includes('*21000')){
+            mountOverview21k(lastExpr);
+          } else {
+            mountOverview21k(lastExpr);
+          }
         } else {
           mountAdvanced(lastSymbol);
         }
@@ -1165,8 +1179,8 @@ function wirePriceControls(){
       // --- Buttons wiring ---
       var btnPair = document.getElementById("btn_pair");
       var btnM    = document.getElementById("btn_m");
-      var btnUSDk = document.getElementById("btn_usd_20k");
-      var btnEURk = document.getElementById("btn_eur_20k");
+      var btnUSDk = document.getElementById("btn_usd_21k");
+      var btnEURk = document.getElementById("btn_eur_21k");
 
       if(btnPair){
         btnPair.addEventListener("click", function(){
@@ -1188,7 +1202,7 @@ function wirePriceControls(){
         btnUSDk.addEventListener("click", function(){
           var expr = "BITSTAMP:XRPUSD*21000";
           if(mode === "advanced" && kCurrency === "usd"){
-            mountOverview20k(expr);
+            mountOverview21k(expr);
           } else {
             mountAdvanced(expr);
             kCurrency = "usd";
@@ -1199,7 +1213,7 @@ function wirePriceControls(){
         btnEURk.addEventListener("click", function(){
           var expr = "BITSTAMP:XRPEUR*21000";
           if(mode === "advanced" && kCurrency === "eur"){
-            mountOverview20k(expr);
+            mountOverview21k(expr);
           } else {
             mountAdvanced(expr);
             kCurrency = "eur";
