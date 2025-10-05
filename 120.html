@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"/>
-  <title>XRP Portfolio Manager — 120 (v254)</title>
+  <title>XRP Portfolio Manager — 225 (v254)</title>
   <style>
     :root{--bg:#000;--card:#000;--text:#e6edf3;--muted:#8b949e;--radius:16px;--cardBorder:#22314b;--inputBg:#050505;--accent:#2ea043;--track:#1f2a44}
     :root.light{--bg:#ffffff;--card:#f7f9fc;--text:#0b1220;--muted:#536079;--cardBorder:#d6deea;--inputBg:#ffffff;--accent:#2ea043;--track:#d8e1f1}
@@ -60,8 +60,8 @@
         <div class="tv-btns">
           <button class="tv-btn" id="btn_pair">$/€</button>
           <button class="tv-btn" id="btn_m">m</button>
-          <button class="tv-btn" id="btn_usd_12">$120</button>
-          <button class="tv-btn" id="btn_eur_12">€120</button>
+          <button class="tv-btn" id="btn_usd_12">$225</button>
+          <button class="tv-btn" id="btn_eur_12">€225</button>
         </div>
       </div>
       <div id="tv_xrp_container" style="height:420px;width:100%"></div>
@@ -80,8 +80,8 @@
       <div class="grid section">
         <div class="tile"><div class="label">XRPEUR</div><div class="val mono" id="xrpEur">€0.00</div></div>
         <div class="tile"><div class="label">XRPUSD</div><div class="val mono" id="xrpUsdTile">$0.00</div></div>
-        <div class="tile"><div class="label">XRPEUR × 120</div><div class="val mono" id="eurHeld">€0</div></div>
-        <div class="tile"><div class="label">XRPUSD × 120</div><div class="val mono" id="usdHeld">$0</div></div>
+        <div class="tile"><div class="label">XRPEUR × 225</div><div class="val mono" id="eurHeld">€0</div></div>
+        <div class="tile"><div class="label">XRPUSD × 225</div><div class="val mono" id="usdHeld">$0</div></div>
       </div>
     </div>
 
@@ -151,7 +151,7 @@
               <div class="inline-pair"><div class="mono" id="intXrp">0 XRP</div><div class="subtitle mono" id="intUsd">$0</div></div>
             </div>
           </div>
-          <input id="interestSlider" type="range" min="0" max="120" step="10" value="100">
+          <input id="interestSlider" type="range" min="0" max="225" step="10" value="200">
           <div class="subtitle mono" id="interestEarned">Interest: $0</div>
         </div>
 
@@ -162,16 +162,16 @@
               <div class="inline-pair"><div class="mono" id="loanXrp">0 XRP</div><div class="subtitle mono" id="loanUsd">$0</div></div>
             </div>
           </div>
-          <input id="loanSlider" type="range" min="0" max="120" step="10" value="20">
+          <input id="loanSlider" type="range" min="0" max="225" step="10" value="20">
           <div class="subtitle mono" id="loanAmount">Loan: $0</div>
         </div>
       </div>
 
       <div class="row" style="justify-content:space-between;align-items:center;margin-top:8px">
         <div class="toolbar">
-          <button data-xrp="30" id="qx30" class="micro">30 XRP</button>
           <button data-xrp="60" id="qx60" class="micro">60 XRP</button>
-          <button data-xrp="90" id="qx90" class="micro">90 XRP</button>
+          <button data-xrp="120" id="qx120" class="micro">120 XRP</button>
+          <button data-xrp="180" id="qx180" class="micro">180 XRP</button>
         </div>
         <div class="toolbar"><button id="showMS" class="micro">show minute/second</button></div>
       </div>
@@ -200,7 +200,7 @@
     function fmtEURshort(n){const abs=Math.abs(Number(n)||0),sign=(n||0)<0?'-':'';const units=[{v:1e15,s:'q'},{v:1e12,s:'t'},{v:1e9,s:'b'},{v:1e6,s:'m'},{v:1e3,s:'k'}];for(const u of units){if(abs>=u.v){const v=abs/u.v;const d=(abs<100*u.v)?1:0;const str=v.toFixed(d).replace(/\.0$/,'');return sign+'€'+str+u.s}}return fmtEURintDot(n)}
     function fmtPresetUSD(n){const abs=Math.abs(Number(n)||0);if(abs>=1_000_000){const raw=abs/1_000_000;const str=(raw<10?raw.toFixed(1):Math.round(raw)).toString().replace(/\.0$/,'');return '$'+str+'m'}if(abs>=1_000){const raw=abs/1_000;const str=(raw<10?raw.toFixed(1):Math.round(raw)).toString().replace(/\.0$/,'');return '$'+str+'k'}return '$'+Math.round(abs)}
 
-    const state={priceUSD:0,priceEUR:0,fxEURperUSD:0,xrpHeld:120,overrideUSD:null,apyOverride:null,msVisible:false,priceSliderVisible:false,tilesPreferLive:false,ltv:0.30,pmCurrency:'USD',sliderMode:'log'};
+    const state={priceUSD:0,priceEUR:0,fxEURperUSD:0,xrpHeld:225,overrideUSD:null,apyOverride:null,msVisible:false,priceSliderVisible:false,tilesPreferLive:false,ltv:0.30,pmCurrency:'USD',sliderMode:'log'};
 
     function setNow(){el('now').textContent=new Date().toLocaleString(undefined,{year:'numeric',month:'long',day:'numeric',hour:'2-digit',minute:'2-digit'})}
 
@@ -365,9 +365,9 @@
 
     function ensureInterestSide(){
       const intS=el('interestSlider');const loanS=el('loanSlider');
-      let v=Number(intS.value);if(!Number.isFinite(v)||v<0){v=100}
-      intS.value=String(clamp(v,0,120));
-      loanS.value=String(clamp(120-Number(intS.value),0,120));
+      let v=Number(intS.value);if(!Number.isFinite(v)||v<0){v=200}
+      intS.value=String(clamp(v,0,225));
+      loanS.value=String(clamp(225-Number(intS.value),0,225));
       return Number(intS.value);
     }
 
@@ -405,9 +405,9 @@
 
     function wireAllocation(){
       const intS=el('interestSlider'),loanS=el('loanSlider');
-      const setBoth=(intVal)=>{const v=clamp(Number(intVal)||0,0,120);intS.value=String(v);loanS.value=String(120-v);render()};
+      const setBoth=(intVal)=>{const v=clamp(Number(intVal)||0,0,225);intS.value=String(v);loanS.value=String(225-v);render()};
       intS.addEventListener('input',(e)=>setBoth(e.target.value));
-      loanS.addEventListener('input',(e)=>setBoth(120-Number(e.target.value)));
+      loanS.addEventListener('input',(e)=>setBoth(225-Number(e.target.value)));
       document.querySelectorAll('button[data-xrp]').forEach(btn=>{
         btn.addEventListener('click',()=>{const xrp=parseInt(btn.getAttribute('data-xrp'),10);if(!isFinite(xrp))return;setBoth(xrp)});
       });
@@ -447,8 +447,8 @@
       var btnEURk=document.getElementById("btn_eur_12");
       if(btnPair){btnPair.addEventListener("click",function(){isEUR=!isEUR;var sym=isEUR?"BITSTAMP:XRPEUR":"BITSTAMP:XRPUSD";mountAdvanced(sym)})}
       if(btnM){btnM.addEventListener("click",function(){if(mFirst){mFirst=false;mIsEUR=false}else{mIsEUR=!mIsEUR}var sym=mIsEUR?"BITSTAMP:XRPEUR":"BITSTAMP:XRPUSD";mountOverview(sym)})}
-      if(btnUSDk){btnUSDk.addEventListener("click",function(){var expr="BITSTAMP:XRPUSD*120";if(mode==="advanced"&&kCurrency==="usd"){mountOverview12(expr)}else{mountAdvanced(expr);kCurrency="usd"}})}
-      if(btnEURk){btnEURk.addEventListener("click",function(){var expr="BITSTAMP:XRPEUR*120";if(mode==="advanced"&&kCurrency==="eur"){mountOverview12(expr)}else{mountAdvanced(expr);kCurrency="eur"}})}
+      if(btnUSDk){btnUSDk.addEventListener("click",function(){var expr="BITSTAMP:XRPUSD*225";if(mode==="advanced"&&kCurrency==="usd"){mountOverview12(expr)}else{mountAdvanced(expr);kCurrency="usd"}})}
+      if(btnEURk){btnEURk.addEventListener("click",function(){var expr="BITSTAMP:XRPEUR*225";if(mode==="advanced"&&kCurrency==="eur"){mountOverview12(expr)}else{mountAdvanced(expr);kCurrency="eur"}})}
       showContainer("advanced");
       mountAdvanced("BITSTAMP:XRPUSD");
     })();
